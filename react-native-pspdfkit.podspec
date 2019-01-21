@@ -12,7 +12,7 @@ Pod::Spec.new do |s|
   s.platform     = :ios, "10.0"
   s.module_name  = 'PSPDFKitReactNativeiOS'
   s.source       = { :http => 'https://s3.amazonaws.com/xomly-dev-ops/pspdfkit-8.1.3-cocoapod-source.zip' }
-  s.source_files = "ios/*.{framework}", "ios/*.{xcodeproj}", "ios/RCTPSPDFKit/*.{h,m,swift}", "ios/RCTPSPDFKit/Converters/*.{h,m,swift}"
+  s.source_files = "*.{framework}", "*.{xcodeproj}", "RCTPSPDFKit/*.{h,m,swift}", "RCTPSPDFKit/Converters/*.{h,m,swift}"
   s.dependency 'React'
   s.frameworks = 'UIKit'
 end
