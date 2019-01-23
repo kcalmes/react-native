@@ -12,10 +12,7 @@ Pod::Spec.new do |s|
   s.platform     = :ios, "10.0"
   s.module_name  = 'PSPDFKitReactNativeiOS'
   s.source_files = "ios/*.{xcodeproj}", "ios/RCTPSPDFKit/*.{h,m,swift}", "ios/RCTPSPDFKit/Converters/*.{h,m,swift}"
-    
-  s.dependency 'React'
-  s.dependency 'PSPDFKit'
-
+  s.dependency = ['React', 'PSPDFKit']
   s.frameworks = 'UIKit'
 end
 
