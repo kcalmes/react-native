@@ -15,8 +15,8 @@
 #import "RCTPSPDFKitView.h"
 #import <React/RCTUIManager.h>
 
-@import PSPDFKit;
-@import PSPDFKitUI;
+#import <PSPDFKit/PSPDFKit.h>
+#import <PSPDFKitUI/PSPDFKitUI.h>
 
 @implementation RCTPSPDFKitViewManager
 

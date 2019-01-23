@@ -8,8 +8,8 @@
 //
 
 #import <React/RCTConvert.h>
-@import PSPDFKit;
-@import PSPDFKitUI;
+#import <PSPDFKit/PSPDFKit.h>
+#import <PSPDFKitUI/PSPDFKitUI.h>
 
 @interface RCTConvert (PSPDFConfiguration)
 

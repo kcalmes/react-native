@@ -10,8 +10,8 @@
 #import <UIKit/UIKit.h>
 #import <React/RCTComponent.h>
 
-@import PSPDFKit;
-@import PSPDFKitUI;
+#import <PSPDFKit/PSPDFKit.h>
+#import <PSPDFKitUI/PSPDFKitUI.h>
 
 @interface RCTPSPDFKitView: UIView
 

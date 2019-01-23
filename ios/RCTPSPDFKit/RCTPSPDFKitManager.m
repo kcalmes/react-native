@@ -15,8 +15,8 @@
 
 #define PROPERTY(property) NSStringFromSelector(@selector(property))
 
-@import PSPDFKit;
-@import PSPDFKitUI;
+#import <PSPDFKit/PSPDFKit.h>
+#import <PSPDFKitUI/PSPDFKitUI.h>
 
 @implementation RCTPSPDFKitManager
 
