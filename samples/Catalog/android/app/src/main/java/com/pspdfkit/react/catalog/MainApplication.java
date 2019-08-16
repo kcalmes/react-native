@@ -3,7 +3,7 @@
  *
  *   PSPDFKit
  *
- *   Copyright © 2017-2018 PSPDFKit GmbH. All rights reserved.
+ *   Copyright © 2017-2019 PSPDFKit GmbH. All rights reserved.
  *
  *   THIS SOURCE CODE AND ANY ACCOMPANYING DOCUMENTATION ARE PROTECTED BY INTERNATIONAL COPYRIGHT LAW
  *   AND MAY NOT BE RESOLD OR REDISTRIBUTED. USAGE IS BOUND TO THE PSPDFKIT LICENSE AGREEMENT.
@@ -23,6 +23,7 @@ import com.facebook.react.ReactPackage;
 import com.facebook.react.shell.MainReactPackage;
 import com.facebook.soloader.SoLoader;
 import com.pspdfkit.react.PSPDFKitPackage;
+import com.swmansion.gesturehandler.react.RNGestureHandlerPackage;
 
 import java.util.Arrays;
 import java.util.List;
@@ -41,7 +42,8 @@ public class MainApplication extends Application implements ReactApplication {
           new MainReactPackage(),
           new RNFSPackage(),
           new RNCameraPackage(),
-          new PSPDFKitPackage()
+          new PSPDFKitPackage(),
+          new RNGestureHandlerPackage()
       );
     }
 

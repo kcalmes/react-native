@@ -1,8 +1,9 @@
 package com.pspdfkit.react;
 
 import android.app.Activity;
-import android.support.annotation.NonNull;
-import android.support.v4.app.FragmentActivity;
+
+import androidx.annotation.NonNull;
+import androidx.fragment.app.FragmentActivity;
 
 import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
@@ -16,6 +17,7 @@ import com.pspdfkit.preferences.PSPDFKitPreferences;
 import com.pspdfkit.react.events.PdfViewAnnotationChangedEvent;
 import com.pspdfkit.react.events.PdfViewAnnotationTappedEvent;
 import com.pspdfkit.react.events.PdfViewDataReturnedEvent;
+import com.pspdfkit.react.events.PdfViewDocumentLoadFailedEvent;
 import com.pspdfkit.react.events.PdfViewDocumentSaveFailedEvent;
 import com.pspdfkit.react.events.PdfViewDocumentSavedEvent;
 import com.pspdfkit.react.events.PdfViewStateChangedEvent;
@@ -50,6 +52,7 @@ public class ReactPdfViewManager extends ViewGroupManager<PdfView> {
     public static final int COMMAND_GET_FORM_FIELD_VALUE = 8;
     public static final int COMMAND_SET_FORM_FIELD_VALUE = 9;
     public static final int COMMAND_REMOVE_ANNOTATION = 10;
+    public static final int COMMAND_GET_ALL_ANNOTATIONS = 11;
 
     private CompositeDisposable annotationDisposables = new CompositeDisposable();
 
@@ -75,7 +78,7 @@ public class ReactPdfViewManager extends ViewGroupManager<PdfView> {
 
     @Override
     public void onDropViewInstance(PdfView view) {
-        view.removeFragment();
+        view.removeFragment(true);
     }
 
     @Nullable
@@ -99,6 +102,7 @@ public class ReactPdfViewManager extends ViewGroupManager<PdfView> {
         commandMap.put("getFormFieldValue", COMMAND_GET_FORM_FIELD_VALUE);
         commandMap.put("setFormFieldValue", COMMAND_SET_FORM_FIELD_VALUE);
         commandMap.put("removeAnnotation", COMMAND_REMOVE_ANNOTATION);
+        commandMap.put("getAllAnnotations", COMMAND_GET_ALL_ANNOTATIONS);
         return commandMap;
     }
 
@@ -148,11 +152,13 @@ public class ReactPdfViewManager extends ViewGroupManager<PdfView> {
     @Override
     public Map getExportedCustomDirectEventTypeConstants() {
         return MapBuilder.of(PdfViewStateChangedEvent.EVENT_NAME, MapBuilder.of("registrationName", "onStateChanged"),
-                PdfViewDocumentSavedEvent.EVENT_NAME, MapBuilder.of("registrationName", "onDocumentSaved"),
-                PdfViewAnnotationTappedEvent.EVENT_NAME, MapBuilder.of("registrationName", "onAnnotationTapped"),
-                PdfViewAnnotationChangedEvent.EVENT_NAME, MapBuilder.of("registrationName", "onAnnotationsChanged"),
-                PdfViewDataReturnedEvent.EVENT_NAME, MapBuilder.of("registrationName", "onDataReturned"),
-                PdfViewDocumentSaveFailedEvent.EVENT_NAME, MapBuilder.of("registrationName", "onDocumentSaveFailed"));
+            PdfViewDocumentSavedEvent.EVENT_NAME, MapBuilder.of("registrationName", "onDocumentSaved"),
+            PdfViewAnnotationTappedEvent.EVENT_NAME, MapBuilder.of("registrationName", "onAnnotationTapped"),
+            PdfViewAnnotationChangedEvent.EVENT_NAME, MapBuilder.of("registrationName", "onAnnotationsChanged"),
+            PdfViewDataReturnedEvent.EVENT_NAME, MapBuilder.of("registrationName", "onDataReturned"),
+            PdfViewDocumentSaveFailedEvent.EVENT_NAME, MapBuilder.of("registrationName", "onDocumentSaveFailed"),
+            PdfViewDocumentLoadFailedEvent.EVENT_NAME, MapBuilder.of("registrationName", "onDocumentLoadFailed")
+        );
     }
 
     @Override
@@ -182,14 +188,29 @@ public class ReactPdfViewManager extends ViewGroupManager<PdfView> {
                     annotationDisposables.add(annotationDisposable);
                 }
                 break;
+            case COMMAND_GET_ALL_ANNOTATIONS:
+                if (args != null && args.size() == 2) {
+                    final int requestId = args.getInt(0);
+                    annotationDisposables.add(root.getAllAnnotations(args.getString(1))
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(annotations -> {
+                            root.getEventDispatcher().dispatchEvent(new PdfViewDataReturnedEvent(root.getId(), requestId, annotations));
+                        }, throwable -> {
+                            root.getEventDispatcher().dispatchEvent(new PdfViewDataReturnedEvent(root.getId(), requestId, throwable));
+                        }));
+                }
+                break;
             case COMMAND_ADD_ANNOTATION:
-                if (args != null) {
-                    annotationDisposables.add(root.addAnnotation(args.getMap(0)));
+                if (args != null && args.size() == 2) {
+                    final int requestId = args.getInt(0);
+                    annotationDisposables.add(root.addAnnotation(requestId, args.getMap(1)));
                 }
                 break;
             case COMMAND_REMOVE_ANNOTATION:
-                if (args != null) {
-                    annotationDisposables.add(root.removeAnnotation(args.getMap(0)));
+                if (args != null && args.size() == 2) {
+                    final int requestId = args.getInt(0);
+                    annotationDisposables.add(root.removeAnnotation(requestId, args.getMap(1)));
                 }
                 break;
             case COMMAND_GET_ALL_UNSAVED_ANNOTATIONS:
@@ -208,8 +229,9 @@ public class ReactPdfViewManager extends ViewGroupManager<PdfView> {
                 }
                 break;
             case COMMAND_ADD_ANNOTATIONS:
-                if (args != null && args.size() == 1) {
-                    annotationDisposables.add(root.addAnnotations(args.getMap(0)));
+                if (args != null && args.size() == 2) {
+                    final int requestId = args.getInt(0);
+                    annotationDisposables.add(root.addAnnotations(requestId, args.getMap(1)));
                 }
                 break;
             case COMMAND_GET_FORM_FIELD_VALUE:

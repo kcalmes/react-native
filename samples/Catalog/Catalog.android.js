@@ -1,4 +1,4 @@
-//   Copyright © 2018 PSPDFKit GmbH. All rights reserved.
+//   Copyright © 2018-2019 PSPDFKit GmbH. All rights reserved.
 //
 //   THIS SOURCE CODE AND ANY ACCOMPANYING DOCUMENTATION ARE PROTECTED BY INTERNATIONAL COPYRIGHT LAW
 //   AND MAY NOT BE RESOLD OR REDISTRIBUTED. USAGE IS BOUND TO THE PSPDFKIT LICENSE AGREEMENT.
@@ -8,35 +8,28 @@
 
 import React, { Component } from "react";
 import {
-  AppRegistry,
   StyleSheet,
   Text,
   View,
   Button,
   Image,
   TouchableHighlight,
-  ListView,
+  FlatList,
   NativeModules,
   processColor,
   PermissionsAndroid,
   Dimensions
 } from "react-native";
-import { StackNavigator, NavigationEvents } from "react-navigation";
+import { createStackNavigator, createAppContainer } from "react-navigation";
 
-import QRCodeScanner from 'react-native-qrcode-scanner';
+import QRCodeScanner from "react-native-qrcode-scanner";
 
 import PSPDFKitView from "react-native-pspdfkit";
 
-// React Native bug that hopefully will be fixed soon:
-// https://github.com/facebook/react-native/issues/18868
-import { YellowBox } from "react-native";
-YellowBox.ignoreWarnings(["Warning: isMounted(...) is deprecated"]);
-
-var PSPDFKit = NativeModules.PSPDFKit;
-var RNFS = require("react-native-fs");
+const PSPDFKit = NativeModules.PSPDFKit;
+const RNFS = require("react-native-fs");
 
 const pspdfkitColor = "#267AD4";
-const pspdfkitColorAlpha = "#267AD450";
 
 const DOCUMENT = "file:///sdcard/Annual Report.pdf";
 const IMAGE_DOCUMENT = "file:///sdcard/android.png";
@@ -56,8 +49,9 @@ const CONFIGURATION = {
   showThumbnailBar: "scrollable"
 };
 
-var examples = [
+const examples = [
   {
+    key: "item1",
     name: "Open assets document",
     description: "Open document from your project assets folder",
     action: () => {
@@ -66,38 +60,42 @@ var examples = [
     }
   },
   {
+    key: "item2",
     name: "Open local document",
     description: "Open document from external storage directory.",
     action: () => {
-      requestExternalStoragePermission(function () {
-        extractFromAssetsIfMissing("Annual Report.pdf", function () {
+      requestExternalStoragePermission(function() {
+        extractFromAssetsIfMissing("Annual Report.pdf", function() {
           PSPDFKit.present(DOCUMENT, {});
         });
       });
     }
   },
   {
+    key: "item3",
     name: "Open local image document",
     description: "Open image image document from external storage directory.",
     action: () => {
-      requestExternalStoragePermission(function () {
-        extractFromAssetsIfMissing("android.png", function () {
+      requestExternalStoragePermission(function() {
+        extractFromAssetsIfMissing("android.png", function() {
           PSPDFKit.presentImage(IMAGE_DOCUMENT, CONFIGURATION_IMAGE_DOCUMENT);
         });
       });
     }
   },
   {
+    key: "item4",
     name: "Configuration Builder",
     description:
       "You can configure the builder with dictionary representation of the PSPDFConfiguration object.",
     action: () => {
-      requestExternalStoragePermission(function () {
+      requestExternalStoragePermission(function() {
         PSPDFKit.present(DOCUMENT, CONFIGURATION);
       });
     }
   },
   {
+    key: "item5",
     name: "PDF View Component",
     description:
       "Show how to use the PSPDFKitView component with react-navigation.",
@@ -106,6 +104,7 @@ var examples = [
     }
   },
   {
+    key: "item6",
     name: "Event Listeners",
     description:
       "Show how to use the listeners exposed by PSPDFKitView component.",
@@ -114,6 +113,7 @@ var examples = [
     }
   },
   {
+    key: "item7",
     name: "Programmatic Annotations",
     description: "Shows how to get and add new annotations using Instant JSON.",
     action: component => {
@@ -121,6 +121,7 @@ var examples = [
     }
   },
   {
+    key: "item8",
     name: "Programmatic Form Filling",
     description: "Shows how to programatically read and write PDF form values.",
     action: component => {
@@ -128,6 +129,7 @@ var examples = [
     }
   },
   {
+    key: "item9",
     name: "Split PDF",
     description: "Show two PDFs side by side by using PSPDFKitView components.",
     action: component => {
@@ -135,6 +137,7 @@ var examples = [
     }
   },
   {
+    key: "item10",
     name: "Instant Example",
     description: "Shows how to open an instant document.",
     action: component => {
@@ -142,6 +145,7 @@ var examples = [
     }
   },
   {
+    key: "item11",
     name: "Debug Log",
     description:
       "Action used for printing stuff during development and debugging.",
@@ -162,7 +166,7 @@ function extractFromAssetsIfMissing(assetFile, callback) {
       } else {
         console.log(
           assetFile +
-          " does not exist, extracting it from assets folder to the external storage directory."
+            " does not exist, extracting it from assets folder to the external storage directory."
         );
         RNFS.existsAssets(assetFile)
           .then(exist => {
@@ -181,7 +185,7 @@ function extractFromAssetsIfMissing(assetFile, callback) {
               // File does not exist, it should never happen.
               throw new Error(
                 assetFile +
-                " couldn't be extracted as it was not found in the project assets folder."
+                  " couldn't be extracted as it was not found in the project assets folder."
               );
             }
           })
@@ -219,11 +223,8 @@ class CatalogScreen extends Component<{}> {
   // Initialize the hardcoded data
   constructor(props) {
     super(props);
-    const ds = new ListView.DataSource({
-      rowHasChanged: (r1, r2) => r1 !== r2
-    });
     this.state = {
-      dataSource: ds.cloneWithRows(examples)
+      dataSource: examples
     };
   }
 
@@ -237,10 +238,10 @@ class CatalogScreen extends Component<{}> {
           />
           <Text style={styles.version}>{PSPDFKit.versionString}</Text>
         </View>
-        <ListView
-          dataSource={this.state.dataSource}
-          renderRow={this._renderRow}
-          renderSeparator={this._renderSeparator}
+        <FlatList
+          data={this.state.dataSource}
+          renderItem={this._renderRow}
+          ItemSeparatorComponent={this._renderSeparator}
           contentContainerStyle={styles.listContainer}
           style={styles.list}
         />
@@ -252,18 +253,18 @@ class CatalogScreen extends Component<{}> {
     return <View key={rowId} style={styles.separator} />;
   }
 
-  _renderRow = example => {
+  _renderRow = ({ item }) => {
     return (
       <TouchableHighlight
         onPress={() => {
-          example.action(this);
+          item.action(this);
         }}
         style={styles.row}
         underlayColor="#209cca50"
       >
         <View style={styles.rowContent}>
-          <Text style={styles.name}>{example.name}</Text>
-          <Text style={styles.description}>{example.description}</Text>
+          <Text style={styles.name}>{item.name}</Text>
+          <Text style={styles.description}>{item.description}</Text>
         </View>
       </TouchableHighlight>
     );
@@ -295,7 +296,7 @@ class PdfViewScreen extends Component<{}> {
     };
   }
 
-  componentWillMount() {
+  componentDidMount() {
     this.props.navigation.setParams({
       handleAnnotationButtonPress: () => {
         if (
@@ -331,7 +332,12 @@ class PdfViewScreen extends Component<{}> {
           }}
           pageIndex={this.state.currentPageIndex}
           fragmentTag="PDF1"
-          menuItemGrouping={['freetext', {key: 'markup', items: ['highlight', "underline"]}, 'ink', 'image']}
+          menuItemGrouping={[
+            "freetext",
+            { key: "markup", items: ["highlight", "underline"] },
+            "ink",
+            "image"
+          ]}
           onStateChanged={event => {
             this.setState({
               currentPageIndex: event.currentPageIndex,
@@ -468,7 +474,7 @@ class PdfViewListenersScreen extends Component<{}> {
     };
   }
 
-  componentWillMount() {
+  componentDidMount() {
     this.props.navigation.setParams({
       handleAnnotationButtonPress: () => {
         if (
@@ -484,15 +490,6 @@ class PdfViewListenersScreen extends Component<{}> {
   }
 
   render() {
-    let buttonTitle = "";
-    if (this.state.annotationCreationActive) {
-      buttonTitle = "Exit Annotation Creation Mode";
-    } else if (this.state.annotationEditingActive) {
-      buttonTitle = "Exit Annotation Editing Mode";
-    } else {
-      buttonTitle = "Enter Annotation Creation Mode";
-    }
-
     return (
       <View style={{ flex: 1 }}>
         <PSPDFKitView
@@ -549,7 +546,7 @@ class PdfViewInstantJsonScreen extends Component<{}> {
     };
   }
 
-  componentWillMount() {
+  componentDidMount() {
     this.props.navigation.setParams({
       handleAnnotationButtonPress: () => {
         if (
@@ -565,21 +562,12 @@ class PdfViewInstantJsonScreen extends Component<{}> {
   }
 
   render() {
-    let buttonTitle = "";
-    if (this.state.annotationCreationActive) {
-      buttonTitle = "Exit Annotation Creation Mode";
-    } else if (this.state.annotationEditingActive) {
-      buttonTitle = "Exit Annotation Editing Mode";
-    } else {
-      buttonTitle = "Enter Annotation Creation Mode";
-    }
-
     return (
       <View style={{ flex: 1 }}>
         <PSPDFKitView
           ref="pdfView"
           document="file:///android_asset/Annual Report.pdf"
-          configuration={{}}
+          configuration={{ showThumbnailBar: "pinned" }}
           fragmentTag="PDF1"
           onStateChanged={event => {
             this.setState({
@@ -600,8 +588,8 @@ class PdfViewInstantJsonScreen extends Component<{}> {
           <View>
             <Button
               onPress={() => {
-                // This gets all annotations on the first page.
-                this.refs.pdfView.getAnnotations(0, null).then(annotations => {
+                // This gets all annotations in the document.
+                this.refs.pdfView.getAllAnnotations().then(annotations => {
                   alert(JSON.stringify(annotations));
                 });
               }}
@@ -612,39 +600,51 @@ class PdfViewInstantJsonScreen extends Component<{}> {
             <Button
               onPress={() => {
                 // This adds a new ink annotation to the first page.
-                this.refs.pdfView.addAnnotation({
-                  bbox: [
-                    89.58633422851562,
-                    98.5791015625,
-                    143.12948608398438,
-                    207.1583251953125
-                  ],
-                  blendMode: "normal",
-                  createdAt: "2018-07-03T13:53:03Z",
-                  isDrawnNaturally: false,
-                  lineWidth: 5,
-                  lines: {
-                    intensities: [[0.5, 0.5, 0.5], [0.5, 0.5, 0.5]],
-                    points: [
-                      [
-                        [92.08633422851562, 101.07916259765625],
-                        [92.08633422851562, 202.15826416015625],
-                        [138.12950134277344, 303.2374267578125]
-                      ],
-                      [
-                        [184.17266845703125, 101.07916259765625],
-                        [184.17266845703125, 202.15826416015625],
-                        [230.2158203125, 303.2374267578125]
+                this.refs.pdfView
+                  .addAnnotation({
+                    bbox: [
+                      89.58633422851562,
+                      98.5791015625,
+                      143.12948608398438,
+                      207.1583251953125
+                    ],
+                    blendMode: "normal",
+                    createdAt: "2018-07-03T13:53:03Z",
+                    isDrawnNaturally: false,
+                    lineWidth: 5,
+                    name: "my annotation",
+                    lines: {
+                      intensities: [[0.5, 0.5, 0.5], [0.5, 0.5, 0.5]],
+                      points: [
+                        [
+                          [92.08633422851562, 101.07916259765625],
+                          [92.08633422851562, 202.15826416015625],
+                          [138.12950134277344, 303.2374267578125]
+                        ],
+                        [
+                          [184.17266845703125, 101.07916259765625],
+                          [184.17266845703125, 202.15826416015625],
+                          [230.2158203125, 303.2374267578125]
+                        ]
                       ]
-                    ]
-                  },
-                  opacity: 1,
-                  pageIndex: 0,
-                  strokeColor: "#AA47BE",
-                  type: "pspdfkit/ink",
-                  updatedAt: "2018-07-03T13:53:03Z",
-                  v: 1
-                });
+                    },
+                    opacity: 1,
+                    pageIndex: 0,
+                    strokeColor: "#AA47BE",
+                    type: "pspdfkit/ink",
+                    updatedAt: "2018-07-03T13:53:03Z",
+                    v: 1
+                  })
+                  .then(result => {
+                    if (result) {
+                      alert("Annotation was added.");
+                    } else {
+                      alert("Annotation was not added.");
+                    }
+                  })
+                  .catch(error => {
+                    alert(JSON.stringify(error));
+                  });
               }}
               title="Add annotation"
             />
@@ -654,10 +654,21 @@ class PdfViewInstantJsonScreen extends Component<{}> {
               onPress={() => {
                 // This removes the first annotation on the first page.
                 this.refs.pdfView.getAnnotations(0, null).then(results => {
-                  const annotations = results.annotations
+                  const annotations = results.annotations;
                   if (annotations.length >= 1) {
                     const annotation = annotations[0];
-                    this.refs.pdfView.removeAnnotation(annotation);
+                    this.refs.pdfView
+                      .removeAnnotation(annotation)
+                      .then(result => {
+                        if (result) {
+                          alert("Annotation was removed.");
+                        } else {
+                          alert("Annotation was not removed.");
+                        }
+                      })
+                      .catch(error => {
+                        alert(JSON.stringify(error));
+                      });
                   }
                 });
               }}
@@ -750,23 +761,24 @@ class InstantExampleScreen extends Component<{}> {
   };
 
   onSuccess = qrData => {
-    const documentInfoUrl = qrData.data
+    const documentInfoUrl = qrData.data;
     fetch(documentInfoUrl)
       .then(response => {
         if (response.ok) {
           return response.json();
         }
-        throw new Error('Error message.');
-      }).then(data => {
-        this.props.navigation.popToTop();
-        PSPDFKit.presentInstant(data.serverUrl, data.jwt, {})
-      }).catch(e => {
-        console.log("failed to load ", url, e.message);
+        throw new Error("Error message.");
       })
-  }
+      .then(data => {
+        this.props.navigation.popToTop();
+        PSPDFKit.presentInstant(data.serverUrl, data.jwt, {});
+      })
+      .catch(e => {
+        console.log("failed to load ", url, e.message);
+      });
+  };
 
   render() {
-
     return (
       <View style={{ flex: 1 }}>
         {this.props.navigation.isFocused && (
@@ -774,8 +786,10 @@ class InstantExampleScreen extends Component<{}> {
             onRead={this.onSuccess}
             topContent={
               <Text style={styles.centerText}>
-                Scan the QR code from <Text style={styles.textBold}>pspdfkit.com/instant/demo</Text> to connect to the document shown in your browser.
-            </Text>
+                Scan the QR code from{" "}
+                <Text style={styles.textBold}>pspdfkit.com/instant/demo</Text>{" "}
+                to connect to the document shown in your browser.
+              </Text>
             }
           />
         )}
@@ -784,33 +798,35 @@ class InstantExampleScreen extends Component<{}> {
   }
 }
 
-export default StackNavigator(
-  {
-    Catalog: {
-      screen: CatalogScreen
+export default createAppContainer(
+  createStackNavigator(
+    {
+      Catalog: {
+        screen: CatalogScreen
+      },
+      PdfView: {
+        screen: PdfViewScreen
+      },
+      PdfViewSplitScreen: {
+        screen: PdfViewSplitScreen
+      },
+      PdfViewListenersScreen: {
+        screen: PdfViewListenersScreen
+      },
+      PdfViewInstantJsonScreen: {
+        screen: PdfViewInstantJsonScreen
+      },
+      PdfViewFormFillingScreen: {
+        screen: PdfViewFormFillingScreen
+      },
+      InstantExampleScreen: {
+        screen: InstantExampleScreen
+      }
     },
-    PdfView: {
-      screen: PdfViewScreen
-    },
-    PdfViewSplitScreen: {
-      screen: PdfViewSplitScreen
-    },
-    PdfViewListenersScreen: {
-      screen: PdfViewListenersScreen
-    },
-    PdfViewInstantJsonScreen: {
-      screen: PdfViewInstantJsonScreen
-    },
-    PdfViewFormFillingScreen: {
-      screen: PdfViewFormFillingScreen
-    },
-    InstantExampleScreen: {
-      screen: InstantExampleScreen
+    {
+      initialRouteName: "Catalog"
     }
-  },
-  {
-    initialRouteName: "Catalog"
-  }
+  )
 );
 
 var styles = StyleSheet.create({
@@ -858,10 +874,10 @@ var styles = StyleSheet.create({
     flex: 1,
     fontSize: 18,
     padding: 32,
-    color: '#777',
+    color: "#777"
   },
   textBold: {
-    fontWeight: '500',
-    color: '#000',
+    fontWeight: "500",
+    color: "#000"
   }
 });

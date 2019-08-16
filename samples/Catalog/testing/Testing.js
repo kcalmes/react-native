@@ -7,13 +7,13 @@ import {
     Button,
     Image,
     TouchableHighlight,
-    ListView,
+    FlatList,
     NativeModules,
     processColor,
     PermissionsAndroid,
     Dimensions
 } from "react-native";
-import { StackNavigator } from "react-navigation";
+import { StackNavigator, NavigationEvents, createStackNavigator, createAppContainer } from "react-navigation";
 
 import styles from './styles'
 import AuthorNameScreen from './AuthorNameScreen'
@@ -53,23 +53,13 @@ class CatalogScreen extends Component<{}> {
         title: "Test Cases"
     };
 
-    // Initialize the hardcoded data
-    constructor(props) {
-        super(props);
-        const ds = new ListView.DataSource({
-            rowHasChanged: (r1, r2) => r1 !== r2
-        });
-        this.state = {
-            dataSource: ds.cloneWithRows(examples)
-        };
-    }
-
     render() {
         return (
             <View style={styles.page}>
-                <ListView
-                    dataSource={this.state.dataSource}
-                    renderRow={this._renderRow}
+                <FlatList
+                    data={examples}
+                    keyExtractor={this._keyExtractor}
+                    renderItem={this._renderRow}
                     renderSeparator={this._renderSeparator}
                     contentContainerStyle={styles.listContainer}
                     style={styles.list}
@@ -78,28 +68,31 @@ class CatalogScreen extends Component<{}> {
         );
     }
 
+    _keyExtractor = (item, index) => item.name;
+
     _renderSeparator(sectionId, rowId) {
         return <View key={rowId} style={styles.separator} />;
     }
 
     _renderRow = example => {
+        console.log(example)
         return (
             <TouchableHighlight
                 onPress={() => {
-                    example.action(this);
+                    example.item.action(this);
                 }}
                 style={styles.row}
                 underlayColor="#209cca50"
             >
                 <View style={styles.rowContent}>
-                    <Text style={styles.name}>{example.name}</Text>
+                    <Text style={styles.name}>{example.item.name}</Text>
                 </View>
             </TouchableHighlight>
         );
     };
 }
 
-export default StackNavigator(
+export default createAppContainer(createStackNavigator(
     {
         Catalog: {
             screen: CatalogScreen
@@ -120,4 +113,4 @@ export default StackNavigator(
     {
         initialRouteName: "Catalog"
     }
-);
+));

@@ -1,5 +1,5 @@
 //
-//  Copyright © 2018 PSPDFKit GmbH. All rights reserved.
+//  Copyright © 2018-2019 PSPDFKit GmbH. All rights reserved.
 //
 //  THIS SOURCE CODE AND ANY ACCOMPANYING DOCUMENTATION ARE PROTECTED BY INTERNATIONAL COPYRIGHT LAW
 //  AND MAY NOT BE RESOLD OR REDISTRIBUTED. USAGE IS BOUND TO THE PSPDFKIT LICENSE AGREEMENT.
@@ -13,6 +13,8 @@
 #import <PSPDFKit/PSPDFKit.h>
 #import <PSPDFKitUI/PSPDFKitUI.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 @interface RCTPSPDFKitView: UIView
 
 @property (nonatomic, readonly) PSPDFViewController *pdfController;
@@ -24,6 +26,7 @@
 @property (nonatomic, copy) RCTBubblingEventBlock onCloseButtonPressed;
 @property (nonatomic, copy) RCTBubblingEventBlock onDocumentSaved;
 @property (nonatomic, copy) RCTBubblingEventBlock onDocumentSaveFailed;
+@property (nonatomic, copy) RCTBubblingEventBlock onDocumentLoadFailed;
 @property (nonatomic, copy) RCTBubblingEventBlock onAnnotationTapped;
 @property (nonatomic, copy) RCTBubblingEventBlock onAnnotationsChanged;
 @property (nonatomic, copy) RCTBubblingEventBlock onStateChanged;
@@ -33,17 +36,26 @@
 - (BOOL)exitCurrentlyActiveMode;
 
 /// Document
-- (BOOL)saveCurrentDocument;
+- (BOOL)saveCurrentDocumentWithError:(NSError *_Nullable *)error;
 
 /// Anotations
-- (NSDictionary<NSString *, NSArray<NSDictionary *> *> *)getAnnotations:(PSPDFPageIndex)pageIndex type:(PSPDFAnnotationType)type;
-- (BOOL)addAnnotation:(id)jsonAnnotation;
+- (NSDictionary<NSString *, NSArray<NSDictionary *> *> *)getAnnotations:(PSPDFPageIndex)pageIndex type:(PSPDFAnnotationType)type error:(NSError *_Nullable *)error;
+- (BOOL)addAnnotation:(id)jsonAnnotation error:(NSError *_Nullable *)error;
 - (BOOL)removeAnnotationWithUUID:(NSString *)annotationUUID;
-- (NSDictionary<NSString *, NSArray<NSDictionary *> *> *)getAllUnsavedAnnotations;
-- (BOOL)addAnnotations:(NSString *)jsonAnnotations;
+- (NSDictionary<NSString *, NSArray<NSDictionary *> *> *)getAllUnsavedAnnotationsWithError:(NSError *_Nullable *)error;
+- (NSDictionary<NSString *, NSArray<NSDictionary *> *> *)getAllAnnotations:(PSPDFAnnotationType)type error:(NSError *_Nullable *)error;
+- (BOOL)addAnnotations:(NSString *)jsonAnnotations error:(NSError *_Nullable *)error;
 
 /// Forms
 - (NSDictionary<NSString *, NSString *> *)getFormFieldValue:(NSString *)fullyQualifiedName;
 - (void)setFormFieldValue:(NSString *)value fullyQualifiedName:(NSString *)fullyQualifiedName;
 
+// Toolbar buttons customizations
+- (void)setLeftBarButtonItems:(nullable NSArray <NSString *> *)items forViewMode:(nullable NSString *) viewMode animated:(BOOL)animated;
+- (void)setRightBarButtonItems:(nullable NSArray <NSString *> *)items forViewMode:(nullable NSString *) viewMode animated:(BOOL)animated;
+- (NSArray <NSString *> *)getLeftBarButtonItemsForViewMode:(NSString *)viewMode;
+- (NSArray <NSString *> *)getRightBarButtonItemsForViewMode:(NSString *)viewMode;
+
 @end
+
+NS_ASSUME_NONNULL_END

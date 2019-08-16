@@ -1,5 +1,5 @@
 //
-//  Copyright © 2018 PSPDFKit GmbH. All rights reserved.
+//  Copyright © 2018-2019 PSPDFKit GmbH. All rights reserved.
 //
 //  THIS SOURCE CODE AND ANY ACCOMPANYING DOCUMENTATION ARE PROTECTED BY INTERNATIONAL COPYRIGHT LAW
 //  AND MAY NOT BE RESOLD OR REDISTRIBUTED. USAGE IS BOUND TO THE PSPDFKIT LICENSE AGREEMENT.
@@ -12,6 +12,7 @@
 #import "RCTConvert+PSPDFConfiguration.h"
 #import "RCTConvert+PSPDFDocument.h"
 #import "RCTConvert+PSPDFAnnotationToolbarConfiguration.h"
+#import "RCTConvert+PSPDFViewMode.h"
 #import "RCTPSPDFKitView.h"
 #import <React/RCTUIManager.h>
 
@@ -22,11 +23,11 @@
 
 RCT_EXPORT_MODULE()
 
-RCT_CUSTOM_VIEW_PROPERTY(document, pdfController.document, RCTPSPDFKitView) {
+RCT_CUSTOM_VIEW_PROPERTY(document, PSPDFDocument, RCTPSPDFKitView) {
   if (json) {
     view.pdfController.document = [RCTConvert PSPDFDocument:json];
     view.pdfController.document.delegate = (id<PSPDFDocumentDelegate>)view;
-
+    
     // The author name may be set before the document exists. We set it again here when the document exists.
     if (view.annotationAuthorName) {
       view.pdfController.document.defaultAnnotationUsername = view.annotationAuthorName;
@@ -44,7 +45,7 @@ RCT_CUSTOM_VIEW_PROPERTY(configuration, PSPDFConfiguration, RCTPSPDFKitView) {
   }
 }
 
-RCT_CUSTOM_VIEW_PROPERTY(annotationAuthorName, pdfController.document.defaultAnnotationUsername, RCTPSPDFKitView) {
+RCT_CUSTOM_VIEW_PROPERTY(annotationAuthorName, NSString, RCTPSPDFKitView) {
   if (json) {
     view.pdfController.document.defaultAnnotationUsername = json;
     view.annotationAuthorName = json;
@@ -55,6 +56,26 @@ RCT_CUSTOM_VIEW_PROPERTY(menuItemGrouping, PSPDFAnnotationToolbarConfiguration, 
   if (json) {
     PSPDFAnnotationToolbarConfiguration *configuration = [RCTConvert PSPDFAnnotationToolbarConfiguration:json];
     view.pdfController.annotationToolbarController.annotationToolbar.configurations = @[configuration];
+  }
+}
+
+RCT_CUSTOM_VIEW_PROPERTY(leftBarButtonItems, NSArray<UIBarButtonItem *>, RCTPSPDFKitView) {
+  if (json) {
+    NSArray *leftBarButtonItems = [RCTConvert NSArray:json];
+    [view setLeftBarButtonItems:leftBarButtonItems forViewMode:nil animated:NO];
+  }
+}
+
+RCT_CUSTOM_VIEW_PROPERTY(rightBarButtonItems, NSArray<UIBarButtonItem *>, RCTPSPDFKitView) {
+  if (json) {
+    NSArray *rightBarButtonItems = [RCTConvert NSArray:json];
+    [view setRightBarButtonItems:rightBarButtonItems forViewMode:nil animated:NO];
+  }
+}
+
+RCT_CUSTOM_VIEW_PROPERTY(toolbarTitle, NSString, RCTPSPDFKitView) {
+  if (json) {
+    view.pdfController.title = json;
   }
 }
 
@@ -77,6 +98,8 @@ RCT_EXPORT_VIEW_PROPERTY(onCloseButtonPressed, RCTBubblingEventBlock)
 RCT_EXPORT_VIEW_PROPERTY(onDocumentSaved, RCTBubblingEventBlock)
 
 RCT_EXPORT_VIEW_PROPERTY(onDocumentSaveFailed, RCTBubblingEventBlock)
+
+RCT_EXPORT_VIEW_PROPERTY(onDocumentLoadFailed, RCTBubblingEventBlock)
 
 RCT_EXPORT_VIEW_PROPERTY(onAnnotationTapped, RCTBubblingEventBlock)
 
@@ -111,11 +134,12 @@ RCT_EXPORT_METHOD(exitCurrentlyActiveMode:(nonnull NSNumber *)reactTag resolver:
 RCT_EXPORT_METHOD(saveCurrentDocument:(nonnull NSNumber *)reactTag resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) {
   dispatch_async(dispatch_get_main_queue(), ^{
     RCTPSPDFKitView *component = (RCTPSPDFKitView *)[self.bridge.uiManager viewForReactTag:reactTag];
-    BOOL success = [component saveCurrentDocument];
+    NSError *error;
+    BOOL success = [component saveCurrentDocumentWithError:&error];
     if (success) {
       resolve(@(success));
     } else {
-      reject(@"error", @"Failed to save document.", nil);
+      reject(@"error", @"Failed to save document.", error);
     }
   });
 }
@@ -123,11 +147,12 @@ RCT_EXPORT_METHOD(saveCurrentDocument:(nonnull NSNumber *)reactTag resolver:(RCT
 RCT_REMAP_METHOD(getAnnotations, getAnnotations:(nonnull NSNumber *)pageIndex type:(NSString *)type reactTag:(nonnull NSNumber *)reactTag resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) {
   dispatch_async(dispatch_get_main_queue(), ^{
     RCTPSPDFKitView *component = (RCTPSPDFKitView *)[self.bridge.uiManager viewForReactTag:reactTag];
-    NSDictionary *annotations = [component getAnnotations:(PSPDFPageIndex)pageIndex.integerValue type:[RCTConvert annotationTypeFromInstantJSONType:type]];
+    NSError *error;
+    NSDictionary *annotations = [component getAnnotations:(PSPDFPageIndex)pageIndex.integerValue type:[RCTConvert annotationTypeFromInstantJSONType:type] error:&error];
     if (annotations) {
       resolve(annotations);
     } else {
-      reject(@"error", @"Failed to get annotations.", nil);
+      reject(@"error", @"Failed to get annotations.", error);
     }
   });
 }
@@ -135,11 +160,12 @@ RCT_REMAP_METHOD(getAnnotations, getAnnotations:(nonnull NSNumber *)pageIndex ty
 RCT_EXPORT_METHOD(addAnnotation:(id)jsonAnnotation reactTag:(nonnull NSNumber *)reactTag resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) {
   dispatch_async(dispatch_get_main_queue(), ^{
     RCTPSPDFKitView *component = (RCTPSPDFKitView *)[self.bridge.uiManager viewForReactTag:reactTag];
-    BOOL success = [component addAnnotation:jsonAnnotation];
+    NSError *error;
+    BOOL success = [component addAnnotation:jsonAnnotation error:&error];
     if (success) {
       resolve(@(success));
     } else {
-      reject(@"error", @"Failed to add annotation.", nil);
+      reject(@"error", @"Failed to add annotation.", error);
     }
   });
 }
@@ -159,11 +185,25 @@ RCT_EXPORT_METHOD(removeAnnotation:(id)jsonAnnotation reactTag:(nonnull NSNumber
 RCT_EXPORT_METHOD(getAllUnsavedAnnotations:(nonnull NSNumber *)reactTag resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) {
   dispatch_async(dispatch_get_main_queue(), ^{
     RCTPSPDFKitView *component = (RCTPSPDFKitView *)[self.bridge.uiManager viewForReactTag:reactTag];
-    NSDictionary *annotations = [component getAllUnsavedAnnotations];
+    NSError *error;
+    NSDictionary *annotations = [component getAllUnsavedAnnotationsWithError:&error];
     if (annotations) {
       resolve(annotations);
     } else {
-      reject(@"error", @"Failed to get annotations.", nil);
+      reject(@"error", @"Failed to get annotations.", error);
+    }
+  });
+}
+
+RCT_EXPORT_METHOD(getAllAnnotations:(NSString *)type reactTag:(nonnull NSNumber *)reactTag resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) {
+  dispatch_async(dispatch_get_main_queue(), ^{
+    RCTPSPDFKitView *component = (RCTPSPDFKitView *)[self.bridge.uiManager viewForReactTag:reactTag];
+    NSError *error;
+    NSDictionary *annotations = [component getAllAnnotations:[RCTConvert annotationTypeFromInstantJSONType:type] error:&error];
+    if (annotations) {
+      resolve(annotations);
+    } else {
+      reject(@"error", @"Failed to get all annotations.", error);
     }
   });
 }
@@ -171,11 +211,12 @@ RCT_EXPORT_METHOD(getAllUnsavedAnnotations:(nonnull NSNumber *)reactTag resolver
 RCT_EXPORT_METHOD(addAnnotations:(id)jsonAnnotations reactTag:(nonnull NSNumber *)reactTag resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) {
   dispatch_async(dispatch_get_main_queue(), ^{
     RCTPSPDFKitView *component = (RCTPSPDFKitView *)[self.bridge.uiManager viewForReactTag:reactTag];
-    BOOL success = [component addAnnotations:jsonAnnotations];
+    NSError *error;
+    BOOL success = [component addAnnotations:jsonAnnotations error:&error];
     if (success) {
       resolve(@(success));
     } else {
-      reject(@"error", @"Failed to add annotations.", nil);
+      reject(@"error", @"Failed to add annotations.", error);
     }
   });
 }
@@ -196,6 +237,44 @@ RCT_EXPORT_METHOD(setFormFieldValue:(nullable NSString *)value fullyQualifiedNam
   dispatch_async(dispatch_get_main_queue(), ^{
     RCTPSPDFKitView *component = (RCTPSPDFKitView *)[self.bridge.uiManager viewForReactTag:reactTag];
     [component setFormFieldValue:value fullyQualifiedName:fullyQualifiedName];
+  });
+}
+
+RCT_EXPORT_METHOD(setLeftBarButtonItems:(nullable NSArray *)items viewMode:(nullable NSString *)viewMode animated:(BOOL)animated reactTag:(nonnull NSNumber *)reactTag) {
+  dispatch_async(dispatch_get_main_queue(), ^{
+    RCTPSPDFKitView *component = (RCTPSPDFKitView *)[self.bridge.uiManager viewForReactTag:reactTag];
+    [component setLeftBarButtonItems:items forViewMode:viewMode animated:animated];
+  });
+}
+
+RCT_EXPORT_METHOD(setRightBarButtonItems:(nullable NSArray *)items viewMode:(nullable NSString *)viewMode animated:(BOOL)animated reactTag:(nonnull NSNumber *)reactTag) {
+  dispatch_async(dispatch_get_main_queue(), ^{
+    RCTPSPDFKitView *component = (RCTPSPDFKitView *)[self.bridge.uiManager viewForReactTag:reactTag];
+    [component setRightBarButtonItems:items forViewMode:viewMode animated:animated];
+  });
+}
+
+RCT_EXPORT_METHOD(getLeftBarButtonItemsForViewMode:(nullable NSString *)viewMode reactTag:(nonnull NSNumber *)reactTag resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) {
+  dispatch_async(dispatch_get_main_queue(), ^{
+    RCTPSPDFKitView *component = (RCTPSPDFKitView *)[self.bridge.uiManager viewForReactTag:reactTag];
+    NSArray *leftBarButtonItems = [component getLeftBarButtonItemsForViewMode:viewMode];
+    if (leftBarButtonItems) {
+      resolve(leftBarButtonItems);
+    } else {
+      reject(@"error", @"Failed to get the left bar button items.", nil);
+    }
+  });
+}
+
+RCT_EXPORT_METHOD(getRightBarButtonItemsForViewMode:(nullable NSString *)viewMode reactTag:(nonnull NSNumber *)reactTag resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) {
+  dispatch_async(dispatch_get_main_queue(), ^{
+    RCTPSPDFKitView *component = (RCTPSPDFKitView *)[self.bridge.uiManager viewForReactTag:reactTag];
+    NSArray *rightBarButtonItems = [component getRightBarButtonItemsForViewMode:viewMode];
+    if (rightBarButtonItems) {
+      resolve(rightBarButtonItems);
+    } else {
+      reject(@"error", @"Failed to get the right bar button items.", nil);
+    }
   });
 }
 

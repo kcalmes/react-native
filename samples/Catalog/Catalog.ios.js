@@ -1,4 +1,4 @@
-//  Copyright © 2016-2018 PSPDFKit GmbH. All rights reserved.
+//  Copyright © 2016-2019 PSPDFKit GmbH. All rights reserved.
 //
 //  THIS SOURCE CODE AND ANY ACCOMPANYING DOCUMENTATION ARE PROTECTED BY INTERNATIONAL COPYRIGHT LAW
 //  AND MAY NOT BE RESOLD OR REDISTRIBUTED. USAGE IS BOUND TO THE PSPDFKIT LICENSE AGREEMENT.
@@ -14,13 +14,13 @@ import {
   Button,
   Image,
   TouchableHighlight,
-  ListView,
+  FlatList,
   NativeModules,
   processColor,
-  NavigatorIOS,
   Modal,
   Dimensions
 } from "react-native";
+import { createStackNavigator, createAppContainer } from "react-navigation";
 const RNFS = require("react-native-fs");
 
 import PSPDFKitView from "react-native-pspdfkit";
@@ -31,8 +31,9 @@ PSPDFKit.setLicenseKey("YOUR_LICENSE_KEY_GOES_HERE");
 const pspdfkitColor = "#267AD4";
 const pspdfkitColorAlpha = "#267AD450";
 
-var examples = [
+const examples = [
   {
+    key: "item1",
     name: "Open document using resource path",
     description: "Open document from your resource bundle with relative path.",
     action: () => {
@@ -40,6 +41,7 @@ var examples = [
     }
   },
   {
+    key: "item2",
     name: "Open document with absolute path",
     description:
       "Opens document from application Documents directory by passing the absolute path.",
@@ -65,6 +67,7 @@ var examples = [
     }
   },
   {
+    key: "item3",
     name: "Configured Controller",
     description:
       "You can configure the controller with dictionary representation of the PSPDFConfiguration object.",
@@ -74,7 +77,6 @@ var examples = [
         backgroundColor: processColor("white"),
         showThumbnailBar: "scrollable",
         pageTransition: "scrollContinuous",
-        pageScrollDirection: "vertical",
         showPageLabels: false,
         showDocumentLabel: true,
         inlineSearch: true
@@ -82,96 +84,75 @@ var examples = [
     }
   },
   {
+    key: "item4",
     name: "PDF View Component",
-    description:
-      "Show how to use the PSPDFKitView component with NavigatorIOS.",
+    description: "Show how to use the PSPDFKitView component with Navigator.",
     action: component => {
-      const nextRoute = {
-        component: PSPDFKitView,
-        passProps: {
-          document: "PDFs/Annual Report.pdf",
-          configuration: {
-            useParentNavigationBar: true,
-            showDocumentLabel: true,  
-          },
-          style: { flex: 1 }
-        }
-      };
-      component.props.navigator.push(nextRoute);
+      component.props.navigation.push("ConfiguredPDFViewComponent");
     }
   },
   {
+    key: "item5",
     name: "Event Listeners",
     description:
       "Show how to use the listeners exposed by PSPDFKitView component.",
     action: component => {
-      const nextRoute = {
-        component: EventListeners
-      };
-      component.props.navigator.push(nextRoute);
+      component.props.navigation.push("EventListeners");
     }
   },
   {
+    key: "item6",
     name: "Change Pages Buttons",
     description: "Adds a toolbar at the bottom with buttons to change pages.",
     action: component => {
-      const nextRoute = {
-        component: ChangePages
-      };
-      component.props.navigator.push(nextRoute);
+      component.props.navigation.push("ChangePages");
     }
   },
   {
+    key: "item7",
     name: "Enter and Exit the Annotation Creation Mode",
     description:
       "Adds a toolbar at the bottom with a button to toggle the annotation toolbar.",
     action: component => {
-      const nextRoute = {
-        component: AnnotationCreationMode
-      };
-      component.props.navigator.push(nextRoute);
+      component.props.navigation.push("AnnotationCreationMode");
     }
   },
   {
+    key: "item8",
     name: "Manual Save",
     description:
       "Adds a toolbar at the bottom with a Save button and disables automatic saving.",
     action: component => {
-      const nextRoute = {
-        component: ManualSave
-      };
-      component.props.navigator.push(nextRoute);
+      component.props.navigation.push("ManualSave");
     }
   },
   {
+    key: "item9",
     name: "Split PDF",
     description: "Show two PDFs side by side by using PSPDFKitView components.",
     action: component => {
-      component.openModal();
+      component.props.navigation.navigate("SplitPDF");
     }
   },
   {
+    key: "item10",
     name: "Programmatic Annotations",
     description: "Shows how to get and add new annotations using Instant JSON.",
     action: component => {
-      const nextRoute = {
-        component: ProgrammaticAnnotations
-      };
-      component.props.navigator.push(nextRoute);
+      component.props.navigation.push("ProgrammaticAnnotations");
     }
   },
   {
+    key: "item11",
     name: "Programmatic Form Filling",
     description:
       "Shows how to get the value of a form element and how to programmatically fill forms.",
     action: component => {
-      const nextRoute = {
-        component: ProgrammaticFormFilling
-      };
-      component.props.navigator.push(nextRoute);
+      component.props.navigation.push("ProgrammaticFormFilling");
     }
   },
   {
+    key: "item12",
     name: "Debug Log",
     description:
       "Action used for printing stuff during development and debugging.",
@@ -181,100 +162,33 @@ var examples = [
     }
   },
   {
+    key: "item13",
     name: "Custom Sharing Options",
-    description:
-      "Customize the sharing options for a document.",
+    description: "Customize the sharing options for a document.",
     action: () => {
       PSPDFKit.present("PDFs/Annual Report.pdf", {
-        pageScrollDirection: "horizontal",
         backgroundColor: processColor("white"),
         showThumbnailBar: "scrollable",
         pageTransition: "scrollContinuous",
         pageScrollDirection: "vertical",
         sharingConfigurations: [
-        	{
-        		annotationOptions: ["flatten"],
-        		pageSelectionOptions: ["all", "annotated"]
-        	}
+          {
+            annotationOptions: ["flatten"],
+            pageSelectionOptions: ["all", "annotated"]
+          }
         ]
       });
     }
+  },
+  {
+    key: "item14",
+    name: "Customize the Toolbar",
+    description: "Shows how to customize the buttons in the toolbar.",
+    action: component => {
+      component.props.navigation.push("ToolbarCustomization");
+    }
   }
 ];
-
-class ExampleList extends Component {
-  openModal = () => {
-    this.setState({ modalVisible: true });
-  };
-
-  closeModal = () => {
-    this.setState({ modalVisible: false });
-  };
-
-  constructor(props) {
-    super(props);
-    const ds = new ListView.DataSource({
-      rowHasChanged: (r1, r2) => r1 !== r2
-    });
-    this.state = {
-      dataSource: ds.cloneWithRows(examples),
-      modalVisible: false
-    };
-  }
-
-  render() {
-    return (
-      <View style={{ flex: 1 }}>
-        <Modal
-          visible={this.state.modalVisible}
-          animationType={"slide"}
-          onRequestClose={this.closeModal}
-          supportedOrientations={["portrait", "landscape"]}
-        >
-          <SplitPDF onClose={this.closeModal} style={{ flex: 1 }} />
-        </Modal>
-        <ListView
-          dataSource={this.state.dataSource}
-          renderHeader={this._renderHeader}
-          renderRow={this._renderRow}
-          renderSeparator={this._renderSeparator}
-          contentContainerStyle={styles.listContainer}
-          style={styles.list}
-        />
-      </View>
-    );
-  }
-
-  _renderHeader() {
-    return (
-      <View style={styles.header}>
-        <Image source={require("./assets/logo-flat.png")} style={styles.logo} />
-        <Text style={styles.version}>{PSPDFKit.versionString}</Text>
-      </View>
-    );
-  }
-
-  _renderSeparator(sectionId, rowId) {
-    return <View key={rowId} style={styles.separator} />;
-  }
-
-  _renderRow = example => {
-    return (
-      <TouchableHighlight
-        onPress={() => {
-          example.action(this);
-        }}
-        style={styles.row}
-        underlayColor={pspdfkitColorAlpha}
-      >
-        <View style={styles.rowContent}>
-          <Text style={styles.name}>{example.name}</Text>
-          <Text style={styles.description}>{example.description}</Text>
-        </View>
-      </TouchableHighlight>
-    );
-  };
-}
 
 class SplitPDF extends Component {
   constructor(props) {
@@ -300,8 +214,6 @@ class SplitPDF extends Component {
             showThumbnailBar: "scrollable"
           }}
           pageIndex={4}
-          showCloseButton={true}
-          onCloseButtonPressed={this.props.onClose}
           style={{ flex: 1, color: pspdfkitColor }}
         />
         <PSPDFKitView
@@ -330,6 +242,27 @@ class SplitPDF extends Component {
   };
 }
 
+class ConfiguredPDFViewComponent extends Component {
+  render() {
+    return (
+      <View style={{ flex: 1 }}>
+        <PSPDFKitView
+          document={"PDFs/Annual Report.pdf"}
+          configuration={{
+            backgroundColor: processColor("lightgrey"),
+            showThumbnailBar: "scrubberBar",
+            showDocumentLabel: false,
+            useParentNavigationBar: false,
+            allowToolbarTitleChange: false
+          }}
+          toolbarTitle={"Custom Title"}
+          style={{ flex: 1, color: pspdfkitColor }}
+        />
+      </View>
+    );
+  }
+}
+
 class EventListeners extends Component {
   render() {
     return (
@@ -338,8 +271,7 @@ class EventListeners extends Component {
           document={"PDFs/Annual Report.pdf"}
           configuration={{
             backgroundColor: processColor("lightgrey"),
-            showThumbnailBar: "scrollable",
-            useParentNavigationBar: true
+            showThumbnailBar: "scrollable"
           }}
           style={{ flex: 1, color: pspdfkitColor }}
           // Event Listeners
@@ -391,8 +323,7 @@ class ChangePages extends Component {
           document={"PDFs/Annual Report.pdf"}
           configuration={{
             backgroundColor: processColor("lightgrey"),
-            showThumbnailBar: "scrollable",
-            useParentNavigationBar: true
+            showThumbnailBar: "scrollable"
           }}
           pageIndex={this.state.currentPageIndex}
           style={{ flex: 1, color: pspdfkitColor }}
@@ -474,10 +405,14 @@ class AnnotationCreationMode extends Component {
           document={"PDFs/Annual Report.pdf"}
           configuration={{
             backgroundColor: processColor("lightgrey"),
-            showThumbnailBar: "scrollable",
-            useParentNavigationBar: true
+            showThumbnailBar: "scrollable"
           }}
-          menuItemGrouping={['freetext', {key: 'markup', items: ['highlight', "underline"]}, 'ink', 'image']}
+          menuItemGrouping={[
+            "freetext",
+            { key: "markup", items: ["highlight", "underline"] },
+            "ink",
+            "image"
+          ]}
           pageIndex={this.state.currentPageIndex}
           style={{ flex: 1, color: pspdfkitColor }}
           onStateChanged={event => {
@@ -526,8 +461,7 @@ class ManualSave extends Component {
           disableAutomaticSaving={true}
           configuration={{
             backgroundColor: processColor("lightgrey"),
-            showThumbnailBar: "scrollable",
-            useParentNavigationBar: true
+            showThumbnailBar: "scrollable"
           }}
           style={{ flex: 1, color: pspdfkitColor }}
         />
@@ -570,8 +504,7 @@ class ProgrammaticAnnotations extends Component {
           disableAutomaticSaving={true}
           configuration={{
             backgroundColor: processColor("lightgrey"),
-            showThumbnailBar: "scrollable",
-            useParentNavigationBar: true
+            showThumbnailBar: "scrollable"
           }}
           style={{ flex: 1, color: pspdfkitColor }}
           onStateChanged={event => {
@@ -623,7 +556,18 @@ class ProgrammaticAnnotations extends Component {
                   type: "pspdfkit/ink",
                   v: 1
                 };
-                this.refs.pdfView.addAnnotation(annotationJSON);
+                this.refs.pdfView
+                  .addAnnotation(annotationJSON)
+                  .then(result => {
+                    if (result) {
+                      alert("Annotation was successfully added.");
+                    } else {
+                      alert("Failed to add annotation.");
+                    }
+                  })
+                  .catch(error => {
+                    alert(JSON.stringify(error));
+                  });
               }}
               title="addAnnotation"
             />
@@ -637,7 +581,18 @@ class ProgrammaticAnnotations extends Component {
                   "pspdfkit/ink"
                 );
                 const firstInkAnnotation = inkAnnotations["annotations"][0];
-                this.refs.pdfView.removeAnnotation(firstInkAnnotation);
+                this.refs.pdfView
+                  .removeAnnotation(firstInkAnnotation)
+                  .then(result => {
+                    if (result) {
+                      alert("Annotation was successfully removed.");
+                    } else {
+                      alert("Failed to remove annotation.");
+                    }
+                  })
+                  .catch(error => {
+                    alert(JSON.stringify(error));
+                  });
               }}
               title="removeAnnotation"
             />
@@ -772,7 +727,18 @@ class ProgrammaticAnnotations extends Component {
                   ],
                   format: "https://pspdfkit.com/instant-json/v1"
                 };
-                this.refs.pdfView.addAnnotations(annotationsJSON);
+                this.refs.pdfView
+                  .addAnnotations(annotationsJSON)
+                  .then(result => {
+                    if (result) {
+                      alert("Annotations were successfully added.");
+                    } else {
+                      alert("Failed to add annotations.");
+                    }
+                  })
+                  .catch(error => {
+                    alert(JSON.stringify(error));
+                  });
               }}
               title="addAnnotations"
             />
@@ -781,11 +747,18 @@ class ProgrammaticAnnotations extends Component {
             <Button
               onPress={async () => {
                 // Get ink annotations from the current page.
-                const annotations = await this.refs.pdfView.getAnnotations(
-                  this.state.currentPageIndex,
-                  "pspdfkit/ink"
-                );
-                alert(JSON.stringify(annotations));
+                await this.refs.pdfView
+                  .getAnnotations(this.state.currentPageIndex, "pspdfkit/ink")
+                  .then(result => {
+                    if (result) {
+                      alert(JSON.stringify(result));
+                    } else {
+                      alert("Failed to get annotations.");
+                    }
+                  })
+                  .catch(error => {
+                    alert(JSON.stringify(error));
+                  });
               }}
               title="getAnnotations"
             />
@@ -794,10 +767,40 @@ class ProgrammaticAnnotations extends Component {
             <Button
               onPress={async () => {
                 // Get all unsaved annotations from the document.
-                const unsavedAnnotations = await this.refs.pdfView.getAllUnsavedAnnotations();
-                alert(JSON.stringify(unsavedAnnotations));
+                await this.refs.pdfView
+                  .getAllUnsavedAnnotations()
+                  .then(result => {
+                    if (result) {
+                      alert(JSON.stringify(result));
+                    } else {
+                      alert("Failed to get unsaved annotations.");
+                    }
+                  })
+                  .catch(error => {
+                    alert(JSON.stringify(error));
+                  });
               }}
               title="getAllUnsavedAnnotations"
+            />
+          </View>
+          <View>
+            <Button
+              onPress={async () => {
+                // Get all annotations annotations from the document.
+                await this.refs.pdfView
+                  .getAllAnnotations()
+                  .then(result => {
+                    if (result) {
+                      alert(JSON.stringify(result));
+                    } else {
+                      alert("Failed to get all annotations.");
+                    }
+                  })
+                  .catch(error => {
+                    alert(JSON.stringify(error));
+                  });
+              }}
+              title="getAllAnnotations"
             />
           </View>
         </View>
@@ -816,8 +819,7 @@ class ProgrammaticFormFilling extends Component {
           disableAutomaticSaving={true}
           configuration={{
             backgroundColor: processColor("lightgrey"),
-            showThumbnailBar: "scrollable",
-            useParentNavigationBar: true
+            showThumbnailBar: "scrollable"
           }}
           style={{ flex: 1, color: pspdfkitColor }}
         />
@@ -873,19 +875,161 @@ class ProgrammaticFormFilling extends Component {
   }
 }
 
-export default class Catalog extends Component {
+class ToolbarCustomization extends Component {
   render() {
     return (
-      <NavigatorIOS
-        initialRoute={{
-          component: ExampleList,
-          title: "PSPDFKit Catalog"
-        }}
-        style={{ flex: 1 }}
-      />
+      <View style={{ flex: 1 }}>
+        <PSPDFKitView
+          ref="pdfView"
+          document={"PDFs/Annual Report.pdf"}
+          configuration={{
+            backgroundColor: processColor("lightgrey"),
+            showThumbnailBar: "scrollable",
+            useParentNavigationBar: false
+          }}
+          leftBarButtonItems={["settingsButtonItem"]}
+          style={{ flex: 1, color: pspdfkitColor }}
+        />
+        <View
+          style={{
+            flexDirection: "row",
+            height: 60,
+            alignItems: "center",
+            padding: 10
+          }}
+        >
+          <View>
+            <Button
+              onPress={async () => {
+                // Update the right bar buttons.
+                await this.refs.pdfView.setRightBarButtonItems(
+                  [
+                    "thumbnailsButtonItem",
+                    "searchButtonItem",
+                    "annotationButtonItem"
+                  ],
+                  "document",
+                  false
+                );
+              }}
+              title="Set right bar button items"
+            />
+          </View>
+
+          <View>
+            <Button
+              onPress={async () => {
+                // Get the right bar buttons.
+                const rightBarButtonItems = await this.refs.pdfView.getRightBarButtonItemsForViewMode(
+                  "document"
+                );
+                alert(JSON.stringify(rightBarButtonItems));
+              }}
+              title="Get right bar button items"
+            />
+          </View>
+        </View>
+      </View>
     );
   }
 }
+
+class Catalog extends Component<{}> {
+  static navigationOptions = {
+    title: "Catalog"
+  };
+
+  // Initialize the hardcoded data
+  constructor(props) {
+    super(props);
+    this.state = {
+      dataSource: examples
+    };
+  }
+
+  render() {
+    return (
+      <View style={{ flex: 1 }}>
+        <View style={styles.header}>
+          <Image
+            source={require("./assets/logo-flat.png")}
+            style={styles.logo}
+          />
+          <Text style={styles.version}>{PSPDFKit.versionString}</Text>
+        </View>
+        <FlatList
+          data={this.state.dataSource}
+          renderItem={this._renderRow}
+          ItemSeparatorComponent={this._renderSeparator}
+          contentContainerStyle={styles.listContainer}
+          style={styles.list}
+          contentInset={{ bottom: 22 }}
+        />
+      </View>
+    );
+  }
+
+  _renderSeparator(sectionId, rowId) {
+    return <View key={rowId} style={styles.separator} />;
+  }
+
+  _renderRow = ({ item }) => {
+    return (
+      <TouchableHighlight
+        onPress={() => {
+          item.action(this);
+        }}
+        style={styles.row}
+        underlayColor={pspdfkitColor}
+      >
+        <View style={styles.rowContent}>
+          <Text style={styles.name}>{item.name}</Text>
+          <Text style={styles.description}>{item.description}</Text>
+        </View>
+      </TouchableHighlight>
+    );
+  };
+}
+
+export default createAppContainer(
+  createStackNavigator(
+    {
+      Catalog: {
+        screen: Catalog
+      },
+      ConfiguredPDFViewComponent: {
+        screen: ConfiguredPDFViewComponent
+      },
+      EventListeners: {
+        screen: EventListeners
+      },
+      ChangePages: {
+        screen: ChangePages
+      },
+      AnnotationCreationMode: {
+        screen: AnnotationCreationMode
+      },
+      ManualSave: {
+        screen: ManualSave
+      },
+      SplitPDF: {
+        screen: SplitPDF
+      },
+      ProgrammaticAnnotations: {
+        screen: ProgrammaticAnnotations
+      },
+      ProgrammaticFormFilling: {
+        screen: ProgrammaticFormFilling
+      },
+      ToolbarCustomization: {
+        screen: ToolbarCustomization
+      }
+    },
+    {
+      initialRouteName: "Catalog"
+    }
+  )
+);
 
 var styles = StyleSheet.create({
   separator: {
